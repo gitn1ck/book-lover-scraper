@@ -1,0 +1,36 @@
+name: Book Lover Mug Watch
+
+on:
+  # GitHub cron runs at most every 5 min and can be delayed, so each run loops
+  # internally every 30 s for ~5h50m. A new run queues behind it via concurrency.
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: mug-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check shop
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          # Whole catalog is scanned for anything matching "book lover" (new colors/handles included).
+          SHOPIFY_SHOP: https://meintonwerk-keramik.myshopify.com
+          # Direct product links, checked as well in case the product is hidden from the catalog.
+          CANDIDATE_URLS: |
+            https://meintonwerk-keramik.myshopify.com/products/book-lover-tasse-1
+            https://meintonwerk-keramik.myshopify.com/products/book-lover-tasse
+            https://meintonwerk-keramik.myshopify.com/products/book-lover-tasse-2
+          INTERVAL: "30"
+          RUN_MINUTES: "350"
+          RENOTIFY_MINUTES: "10"
+        run: python -u check_mug.py
